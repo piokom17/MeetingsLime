@@ -1,12 +1,12 @@
-﻿using System.Numerics;
+﻿using MeetingsLime.Domain;
 
 namespace MeetingsLime.Infrastructure
 {
     public class CallendarDataModel
     {
-        public BigInteger UserId { get; set; }
-        public DateTime StartDate { get; set; }
-        public DateTime EndDate { get; set; }
-        public BigInteger UserName { get; set; }
+        public IReadOnlyList<UserDataModel> UsersData { get; set; }
+
+        public IReadOnlyList<UserCallendar> UsersCallendar { get; set; }
+
     }
 }

@@ -6,4 +6,8 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\MeetingsLime.Domain\MeetingsLime.Domain.csproj" />
+  </ItemGroup>
+
 </Project>

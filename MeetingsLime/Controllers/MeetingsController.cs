@@ -1,4 +1,5 @@
 
+using MeetingsLime.Infrastructure;
 using Microsoft.AspNetCore.Mvc;
 
 namespace MeetingsLime.Controllers
@@ -14,6 +15,8 @@ namespace MeetingsLime.Controllers
         [HttpGet(Name = "Test")]
         public string Get()
         {
+            var file = FileManager.LoadFile();
+            var callendar = FileManager.ParseToCallendarData(file);
             return "test";
         }
     }
