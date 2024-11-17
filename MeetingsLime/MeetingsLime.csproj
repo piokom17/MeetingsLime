@@ -11,6 +11,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\MeetingsLime.Domain\MeetingsLime.Domain.csproj" />
     <ProjectReference Include="..\MeetingsLime.Infrastructure\MeetingsLime.Infrastructure.csproj" />
   </ItemGroup>
 

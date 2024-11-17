@@ -1,4 +1,4 @@
-﻿namespace MeetingsLime.Domain
+﻿namespace MeetingsLime.Infrastructure
 {
     public class UserDataModel
     {

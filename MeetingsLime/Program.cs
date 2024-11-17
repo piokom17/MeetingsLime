@@ -1,6 +1,9 @@
+using MeetingsLime.Domain.Services;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+//TODO: Verify if I did it correctly, because I want to have this MeetingData to be loaded once per application lifetime
+builder.Services.AddSingleton<IMeetingsService, MeetingsService>();
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle

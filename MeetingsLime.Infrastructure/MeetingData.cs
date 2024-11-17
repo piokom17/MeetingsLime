@@ -1,27 +1,39 @@
-﻿using MeetingsLime.Domain;
-using System.Globalization;
+﻿using System.Globalization;
 
 namespace MeetingsLime.Infrastructure
 {
-    public static class FileManager
+    public class MeetingData
     {
-        //static class to load a file into the programs memory and then parse it to some Domain classes
 
-        public static string[] LoadFile()
+        private static readonly Lazy<MeetingData> instance = new Lazy<MeetingData>(() => new MeetingData());
+
+        public static MeetingData Instance => instance.Value;
+
+        //think if here shouldn't be already user and his available hours?
+        public Meeting Data { get; private set; }
+
+        private MeetingData() { 
+            LoadData(); 
+        }
+
+        private void LoadData()
         {
             string filePath = @"C:\Users\User\DEV\freebusy.txt";
+            string[] lines;
             try
             {
-                string[] lines = File.ReadAllLines(filePath);
-                return lines;
+                lines = File.ReadAllLines(filePath);
+                
             }
             catch (Exception ex)
             {
                 throw new FileNotFoundException("An error occurred furing loading the file: " + ex.Message);
             }
+
+            ParseToCallendarData(lines);
         }
 
-        public static CallendarDataModel ParseToCallendarData(string[] inputLines)
+        public void ParseToCallendarData(string[] inputLines)
         {
             //maybe get UserCallendar Data to have only one loop iteration
 
@@ -43,8 +55,10 @@ namespace MeetingsLime.Infrastructure
             //List to store the parsed data
             
             
-            List<UserDataModel> dataList = new List<UserDataModel>();
+            List<UserDataModel> usersData = new List<UserDataModel>();
             List<UserCallendar> userCallendarList = new List<UserCallendar>();
+            Dictionary<UserDataModel, List<MeetingSlot>> userBusyTimeSlots = new Dictionary<UserDataModel, List<MeetingSlot>>();
+
             foreach (string line in inputLines) { 
                 // Split the line by ';'
                 string[] parts = line.Split(';');
@@ -53,7 +67,7 @@ namespace MeetingsLime.Infrastructure
                 //put 2 into const
                 if (parts.Length == 2) { 
                     // Create a new DataModel object and add it to the list
-                    dataList.Add(new UserDataModel { Id = parts[0].Trim(), Name = parts[1] }); 
+                    usersData.Add(new UserDataModel { Id = parts[0].Trim(), Name = parts[1] }); 
                 }
                 else if(parts.Length == 4)
                 {
@@ -71,13 +85,17 @@ namespace MeetingsLime.Infrastructure
                     };
                     userCallendarList.Add(userCallendar);
                 }
-
             }
 
-            return new CallendarDataModel()
+            foreach (var item in usersData)
             {
-                UsersData = dataList.Distinct().ToList(),
-                UsersCallendar = userCallendarList.Distinct().ToList(),
+                var userSlots = userCallendarList.Where(x => x.UserId == item.Id).ToList();
+                userBusyTimeSlots.TryAdd(item, userSlots.Select(x => new MeetingSlot(x.BusyStartDateTime, x.BusyEndDateTime)).ToList());
+            }
+
+            Data = new Meeting()
+            {
+                UserTimeSlots = userBusyTimeSlots
             };
         }
 
