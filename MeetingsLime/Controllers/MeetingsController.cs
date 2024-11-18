@@ -1,8 +1,8 @@
 
 using MeetingsLime.Domain;
 using MeetingsLime.Domain.Services;
-using MeetingsLime.Infrastructure;
 using Microsoft.AspNetCore.Mvc;
+using System.ComponentModel.DataAnnotations;
 
 namespace MeetingsLime.Controllers
 {
@@ -21,31 +21,17 @@ namespace MeetingsLime.Controllers
             //Dopytaæ czy rozwa¿amy ¿e jakies dane maj¹ dochodziæ czy bierzemy pod uwagê ¿e ten stan aplikacji jest dany pod dany wycinek czasu
         }
 
-        //things about thread safety, Make Dictionary the concurrentDictionary, write a unit test for the thread safety
-        //I think wha they want is one big endpoint which checks the available times based on:
-        //office hours
-        //earliest and latest requested meeting date and time
-        //desired meeting length (minutes)
-        //participants id's (one or multiple)
-
-        //[HttpGet(Name = "GetByUserId")]
-        //public IReadOnlyList<MeetingSlot> GetBusyTimeSlotsById()
-        //{
-        //    var res = _meetingsService.GetMeetingsByUserId("276908764613820584354290536660008166629");
-
-        //    return res;
-        //}
-
         [HttpGet(Name ="GetMeetingSuggestions")] 
         public IActionResult GetMeetingSuggestions(
-            [FromQuery] List<string> participants, 
-            [FromQuery] int meetingLengthMinutes, 
-            [FromQuery] DateTime earliestRequested, 
-            [FromQuery] DateTime latestRequested, 
-            [FromQuery] int officeStartHour, 
-            [FromQuery] int officeEndHour) 
+            [FromQuery, Required] List<string> participants, 
+            [FromQuery, Required] int meetingLengthMinutes, 
+            [FromQuery, Required] DateTime earliestRequested, 
+            [FromQuery, Required] DateTime latestRequested, 
+            [FromQuery, Required] int officeStartHour, 
+            [FromQuery, Required] int officeEndHour) 
         { 
             //TODO: validation
+
             var request = new MeetingRequest { 
                 EmployeeIds = participants, 
                 MeetingLengthMinutes = meetingLengthMinutes, 
