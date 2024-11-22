@@ -4,7 +4,6 @@ using MeetingsLime.Validators;
 
 var builder = WebApplication.CreateBuilder(args);
 
-//TODO: Verify if I did it correctly, because I want to have this MeetingData to be loaded once per application lifetime
 builder.Services.AddScoped<IMeetingsService, MeetingsService>();
 builder.Services.AddScoped<IMeetingSuggestionsValidator, MeetingSuggestionsValidator>();
 builder.Services.AddScoped<IMeetingData, MeetingData>();

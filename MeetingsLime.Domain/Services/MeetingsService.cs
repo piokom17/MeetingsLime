@@ -12,9 +12,9 @@ namespace MeetingsLime.Domain.Services
 
         public IReadOnlyList<MeetingResponse> GetMeetingSuggestions(MeetingRequest request)
         {
-            var meetingData = _data.CalculateMeetingData();
+            var meetingDataFromFile = _data.CalculateMeetingData();
             var meetingSuggestions = new List<MeetingResponse>();
-            var users = meetingData.UserTimeSlots.Keys.Where(x => request.EmployeeIds.Contains(x.Id));
+            var users = meetingDataFromFile.UserTimeSlots.Keys.Where(x => request.EmployeeIds.Contains(x.Id));
 
             if (!users.Any())
             {
@@ -23,7 +23,7 @@ namespace MeetingsLime.Domain.Services
 
             foreach (var user in users)
             {
-                meetingData.UserTimeSlots.TryGetValue(user, out var busySlots);
+                meetingDataFromFile.UserTimeSlots.TryGetValue(user, out var busySlots);
 
                 var availableSlotsFromRequest = GetAvailableMeetingsSlotsFromRequest(request);
                 if (busySlots is null || busySlots.Count == 0)
@@ -42,12 +42,11 @@ namespace MeetingsLime.Domain.Services
 
         private IList<MeetingSlot> GetAvailableMeetingsSlotsFromRequest(MeetingRequest request)
         {
-            var meetingLengthStep = CalculateMeetingLengthStep(request.MeetingLengthMinutes);
-            var mettingSlotsFromRequest = CalculateAvailableSlots(request, meetingLengthStep.Item1, meetingLengthStep.Item2);
+            var mettingSlotsFromRequest = CalculateAvailableSlots(request);
             return mettingSlotsFromRequest;
         }
 
-        private IList<MeetingSlot> GetAvailableSlots(IList<MeetingSlot> availableSlots, IList<MeetingSlot> busySlots, int meetingMinutesLength)
+        private static IList<MeetingSlot> GetAvailableSlots(IList<MeetingSlot> availableSlots, IList<MeetingSlot> busySlots, int meetingMinutesLength)
         {
             var result = new List<MeetingSlot>();
             var busySlotsForGivenDay = busySlots
@@ -96,42 +95,16 @@ namespace MeetingsLime.Domain.Services
             return result;
         }
 
-        private (int, int) CalculateMeetingLengthStep(int meetingLengthMinutes)
-        {
-            const int DefaultMeetingLengthInMinutes = 30;
-
-            // Round up to the nearest 30 minutes
-            int roundedMinutes = ((meetingLengthMinutes + DefaultMeetingLengthInMinutes - 1) / DefaultMeetingLengthInMinutes) * DefaultMeetingLengthInMinutes;
-
-            // Calculate hours and minutes
-            int hours = roundedMinutes / 60;
-            int minutes = roundedMinutes % 60;
-
-            return (hours, minutes);
-        }
-
-        private IList<MeetingSlot> CalculateAvailableSlots(MeetingRequest request, int hoursStep, int minutesStep)
+        private static IList<MeetingSlot> CalculateAvailableSlots(MeetingRequest request)
         {
             var availableSlots = new List<MeetingSlot>();
-            DateTime startDateTime;
-            if (request.EarliestRequested.Hour < request.OfficeStartHour)
-            {
-                startDateTime = new DateTime(
-                    request.EarliestRequested.Year,
-                    request.EarliestRequested.Month,
-                    request.EarliestRequested.Day,
-                    request.OfficeStartHour, 0, 0);
-            }
-            else
-            {
-                startDateTime = request.EarliestRequested;
-            }
+            DateTime startDateTime = request.EarliestRequested;
 
             var days = (request.LatestRequested - startDateTime).Days;
             for (int i = 0; i <= days; i++)
             {
-                DateTime currentDayStart = startDateTime.AddDays(i).Date.AddHours(request.OfficeStartHour);
-                DateTime currentDayEnd = startDateTime.AddDays(i).Date.AddHours(request.OfficeEndHour);
+                DateTime currentDayStart = startDateTime.AddDays(i).Date.AddHours(startDateTime.Hour);
+                DateTime currentDayEnd = startDateTime.AddDays(i).Date.AddHours(request.LatestRequested.Hour);
                 DateTime currentSlotStart = currentDayStart;
 
                 while (currentSlotStart.AddMinutes(request.MeetingLengthMinutes) <= currentDayEnd && currentSlotStart.AddMinutes(request.MeetingLengthMinutes) <= request.LatestRequested)

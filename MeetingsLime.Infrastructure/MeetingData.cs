@@ -1,4 +1,4 @@
-﻿using System.Globalization;
+﻿using MeetingsLime.Infrastructure.Helpers;
 
 namespace MeetingsLime.Infrastructure
 {
@@ -12,6 +12,7 @@ namespace MeetingsLime.Infrastructure
 
         private static string[] LoadData()
         {
+            //INFO: If you want to run the app locally without Docker, change the file path to the full path where you store the project
             string filePath = @"/app/data/freebusy.txt";
             try
             {
@@ -42,10 +43,10 @@ namespace MeetingsLime.Infrastructure
                 }
                 else if (parts.Length == userSlotsPartLength)
                 {
-                    var busyStartDateTime = ParseToDateTime(parts[1]);
-                    var busyEndDateTime = ParseToDateTime(parts[2]);
+                    var busyStartDateTime = DateTimeHelper.ParseToDateTime(parts[1]);
+                    var busyEndDateTime = DateTimeHelper.ParseToDateTime(parts[2]);
 
-                    if (!IsValidDateTimeSlot(busyStartDateTime, busyEndDateTime))
+                    if (!DateTimeHelper.IsValidDateTimeSlot(busyStartDateTime, busyEndDateTime))
                         continue;
 
                     var userCallendar = new UserCallendar
@@ -69,30 +70,6 @@ namespace MeetingsLime.Infrastructure
             {
                 UserTimeSlots = userBusyTimeSlots
             };
-        }
-
-        private static DateTime ParseToDateTime(string input)
-        {
-            const string format = "M/d/yyyy h:mm:ss tt";
-            if (DateTime.TryParseExact(input, format, CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime result))
-            {
-
-                return result;
-            }
-            else
-            {
-                return DateTime.MinValue;
-            }
-        }
-
-        private static bool IsValidDateTimeSlot(DateTime start, DateTime end)
-        {
-            if (start == DateTime.MinValue || end == DateTime.MinValue)
-            {
-                return false;
-            }
-            else
-                return true;
         }
     }
 }

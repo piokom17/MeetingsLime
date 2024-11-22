@@ -20,7 +20,7 @@ namespace MeetingsLime.Controllers
             _validator = validator;
         }
 
-        [HttpGet(Name ="GetMeetingSuggestions")] 
+        [HttpGet(Name="GetMeetingSuggestions")]
         public IActionResult GetMeetingSuggestions(
             [FromQuery, Required] List<string> participants, 
             [FromQuery, Required] int meetingLengthMinutes, 

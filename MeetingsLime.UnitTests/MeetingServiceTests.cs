@@ -1,7 +1,5 @@
-﻿using FluentAssertions;
-using MeetingsLime.Domain;
+﻿using MeetingsLime.Domain;
 using MeetingsLime.Domain.Services;
-using MeetingsLime.Infrastructure;
 using Moq;
 
 namespace MeetingsLime.UnitTests

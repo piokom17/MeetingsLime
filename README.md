@@ -1,44 +1,31 @@
 # MeetingsLime
 
-### Task
-
-As a first step, management has asked for an application that works independently of the existing system and
-that can be called to get suggestions for suitable meeting times based on the following parameters:
-	- participants (employee ids), one or multiple
-	- desired meeting length (minutes)
-	- earliest and latest requested meeting date and time
-	- office hours (e.g. 08-17)
-The application can be either an HTTP API or a console application.
-
-At regular intervals all information is dumped from the existing system to a number of text files where the
-freebusy.txt file contains details on when all employees are busy the next few weeks.
-An excerpt from the file can look like this:
-	170378154979885419149243073079764064027;Colin Gomez
-	170378154979885419149243073079764064027;2/18/2014 10:30:00 AM;2/18/2014 11:00:00 AM;485D2AEB9DBE3...
-	139016136604805407078985976850150049467;Minnie Callahan
-	139016136604805407078985976850150049467;2/19/2014 10:30:00 AM;2/19/2014 1:00:00 PM;C165039FC08AB4...
-As it seems, the file has lines in two different formats where the first one contains employee id and display
-name and the second format has information on the time slots where the employee is busy and therefore not
-available for meetings.
-The following can be good to know:
-	- In the file, all times stated can be treated as local times – no need to adjust for timezone differences
-	- apparently it is quite common that people work every day of the week
-	- due to the crappy state of the existing system the file may contain some irregularities, these should be ignored
-	- the system only handles meetings that start every whole and half hour, e.g. 08.00, 08.30, 09.00, etc.
-
-### Solution
-1. Load the files correctly (Service for the files) -> ins constructor, file data is serving as DB tables (it should be one per application runtime - then consider singleton patern?
-or I should consider it's constantly ingoing?')
-2. Check if the files were loaded correctly (any empty lines does are left with the names or hours)
-	Which parser are quicker Newtonsoft, System.Json?
-
-3. Where do we store the available slots (Hashtable, Dictionary) - describe the complexity of the queries, the list of available slots is big so it may have some impact?
-read how to read data from big files, maybe some algorith of searching in the collection?
-4. Precise if we just consider some specific point in time - meaning that this data is not constantly //I think nope it's my edge case suspition
-5. Do the set of endpoints for getting the meeting times availability for each separate staff and one big endpoint for all of the items selected
-6. Treat it as the REST API, prepare the input validations (think about caching for performance?)
-7. Write unit tests for business logic, write how would you behave if that will be the DB
-
-
-
 ### How to run it locally
+
+#1. Run it with Docker
+   To run the app with docker please navigate to the path here the project main folder is located.
+   In my case it was:  C:\Users\User\DEV\MeetingsLime
+
+   Build the project with Docker, enter in command line: docker-compose build
+
+   After build is successful run the project. Enter in command line: docker-compose up
+
+   Open the browse and navigate to http://localhost:8080/swagger/index.html
+
+   You will see one endpoint HTTP GET Meetings please enter the request data and send the request to get the result
+
+
+#2. Run it locally without Docker
+   To run the app locally first write the full path to your file in the MeetingData.cs, press the RUN button, it will automatically open the browser and navigate to the https://localhost:7110/swagger/index.html
+
+#3. Run Unit Tests
+   To run the unit tests, go to Tests -> Run All Tests, or run them from the console with: dotnet test
+
+### My aasumptions & decisions
+	- I decided to create the REST API with one HTTP GET endpoint, where all of the request parameters are required
+	- I made several request data validations, which disallows to get very early or late working hours
+	- The app showing the available slots, with dedicated minutes chunks, so if input is 45 minutes it will show the 45 minutes slots, I know
+	that the hint was to sow them by the full halfs, but I didn't manage to do this before Friday, November 22nd at 4 PM, so that's why I left it like this
+	- I decided to split the project into the .Domain and .Infrastructure parts (although I kow there is not so much business logic which should go to Domain)
+	it is just for the future hypothetic development of the project
+	- I created the unit tests for one request data validator, date time helper and domain service
