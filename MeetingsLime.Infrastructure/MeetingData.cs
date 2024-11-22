@@ -2,38 +2,30 @@
 
 namespace MeetingsLime.Infrastructure
 {
-    public class MeetingData
+    public class MeetingData : IMeetingData
     {
-
-        private static readonly Lazy<MeetingData> instance = new Lazy<MeetingData>(() => new MeetingData());
-
-        public static MeetingData Instance => instance.Value;
-
-        public Meeting Data { get; private set; }
-
-        private MeetingData() { 
-            LoadData(); 
+        private readonly string[] _fileLines;
+        public MeetingData()
+        {
+            _fileLines = LoadData();
         }
 
-        private void LoadData()
+        private static string[] LoadData()
         {
-            string filePath = @"C:\Users\User\DEV\freebusy.txt";
-            string[] lines;
+            string filePath = @"/app/data/freebusy.txt";
             try
             {
-                lines = File.ReadAllLines(filePath);
-                
+                return File.ReadAllLines(filePath);
+
             }
             catch (Exception ex)
             {
                 throw new FileNotFoundException("An error occurred furing loading the file: " + ex.Message);
             }
-
-            CalculateBusyCallendarSlots(lines);
         }
 
-        public void CalculateBusyCallendarSlots(string[] inputLines)
-        {           
+        public Meeting CalculateMeetingData()
+        {
             List<UserDataModel> usersData = new();
             List<UserCallendar> userCallendarList = new();
             Dictionary<UserDataModel, List<MeetingSlot>> userBusyTimeSlots = new();
@@ -41,13 +33,14 @@ namespace MeetingsLime.Infrastructure
             const int userSlotsPartLength = 4;
             const string splitDelimeter = ";";
 
-            foreach (string line in inputLines) { 
+            foreach (string line in _fileLines)
+            {
                 string[] parts = line.Split(splitDelimeter);
-                if (parts.Length == userDataPartLength) { 
-                    //TODO: check whether long parse would work here to validate the Id?
-                    usersData.Add(new UserDataModel { Id = parts[0].Trim(), Name = parts[1] }); 
+                if (parts.Length == userDataPartLength)
+                {
+                    usersData.Add(new UserDataModel { Id = parts[0].Trim(), Name = parts[1] });
                 }
-                else if(parts.Length == userSlotsPartLength)
+                else if (parts.Length == userSlotsPartLength)
                 {
                     var busyStartDateTime = ParseToDateTime(parts[1]);
                     var busyEndDateTime = ParseToDateTime(parts[2]);
@@ -55,8 +48,9 @@ namespace MeetingsLime.Infrastructure
                     if (!IsValidDateTimeSlot(busyStartDateTime, busyEndDateTime))
                         continue;
 
-                    var userCallendar = new UserCallendar { 
-                        UserId = parts[0].Trim(), 
+                    var userCallendar = new UserCallendar
+                    {
+                        UserId = parts[0].Trim(),
                         BusyStartDateTime = busyStartDateTime,
                         BusyEndDateTime = busyEndDateTime,
                         CallendarValue = parts[3]
@@ -71,7 +65,7 @@ namespace MeetingsLime.Infrastructure
                 userBusyTimeSlots.TryAdd(item, userSlots.Select(x => new MeetingSlot(x.BusyStartDateTime, x.BusyEndDateTime)).ToList());
             }
 
-            Data = new Meeting()
+            return new Meeting()
             {
                 UserTimeSlots = userBusyTimeSlots
             };
@@ -82,6 +76,7 @@ namespace MeetingsLime.Infrastructure
             const string format = "M/d/yyyy h:mm:ss tt";
             if (DateTime.TryParseExact(input, format, CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime result))
             {
+
                 return result;
             }
             else

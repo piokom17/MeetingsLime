@@ -1,6 +1,7 @@
 
 using MeetingsLime.Domain;
 using MeetingsLime.Domain.Services;
+using MeetingsLime.Validators;
 using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
 
@@ -11,14 +12,12 @@ namespace MeetingsLime.Controllers
     public class MeetingsController : ControllerBase
     {
         private readonly IMeetingsService _meetingsService;
-        public MeetingsController(IMeetingsService meetingsService)
+        private readonly IMeetingSuggestionsValidator _validator;
+
+        public MeetingsController(IMeetingsService meetingsService, IMeetingSuggestionsValidator validator)
         {
             _meetingsService = meetingsService;
-            //Na starcie programu chce za³adowaæ wszystko z pliku i sparsowaæ na dane do Calendarza,
-            //Tak jakby mamy wszystko obliczane przy starcie i zapisywane do jakichœ statycznych zmiennych dostepnych publicznie podczas
-            //runtim-u aplikacji?
-            //Cha ze wzgledu na Thread safety i lazy loading i wstrzykiwanie zaleca Singleton jako rozwi¹zanie do REST API,
-            //Dopytaæ czy rozwa¿amy ¿e jakies dane maj¹ dochodziæ czy bierzemy pod uwagê ¿e ten stan aplikacji jest dany pod dany wycinek czasu
+            _validator = validator;
         }
 
         [HttpGet(Name ="GetMeetingSuggestions")] 
@@ -29,9 +28,8 @@ namespace MeetingsLime.Controllers
             [FromQuery, Required] DateTime latestRequested, 
             [FromQuery, Required] int officeStartHour, 
             [FromQuery, Required] int officeEndHour) 
-        { 
-            //TODO: validation
-
+        {
+            _validator.Validate(meetingLengthMinutes, earliestRequested, latestRequested, officeStartHour, officeEndHour);
             var request = new MeetingRequest { 
                 EmployeeIds = participants, 
                 MeetingLengthMinutes = meetingLengthMinutes, 

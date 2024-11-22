@@ -4,51 +4,37 @@ namespace MeetingsLime.Domain.Services
 {
     public sealed class MeetingsService : IMeetingsService
     {
-        private readonly MeetingData meetingData;
-
-        public MeetingsService()
+        private readonly IMeetingData _data;
+        public MeetingsService(IMeetingData data)
         {
-            meetingData = MeetingData.Instance;
-        }
-
-        public IReadOnlyList<MeetingSlot> GetMeetingsByUserId(string userId)
-        {
-            var user = meetingData.Data.UserTimeSlots.Keys.First(x => x.Id == userId);
-
-            if (meetingData.Data.UserTimeSlots.TryGetValue(user, out var slots))
-            {
-                return slots;
-            }
-            else
-            {
-                return Enumerable.Empty<MeetingSlot>().ToArray();
-            }
+            _data = data;
         }
 
         public IReadOnlyList<MeetingResponse> GetMeetingSuggestions(MeetingRequest request)
         {
-            //check by the employeeId
+            var meetingData = _data.CalculateMeetingData();
             var meetingSuggestions = new List<MeetingResponse>();
-            var users = meetingData.Data.UserTimeSlots.Keys.Where(x => request.EmployeeIds.Contains(x.Id));
+            var users = meetingData.UserTimeSlots.Keys.Where(x => request.EmployeeIds.Contains(x.Id));
 
             if (!users.Any())
             {
-                //thing about returning here the Enumerable.Empty<>
                 return new List<MeetingResponse>();
             }
 
-            //filter by
             foreach (var user in users)
             {
-                meetingData.Data.UserTimeSlots.TryGetValue(user, out var busySlots);
-                //mam listę godzin w których jest zajęty
+                meetingData.UserTimeSlots.TryGetValue(user, out var busySlots);
+
+                var availableSlotsFromRequest = GetAvailableMeetingsSlotsFromRequest(request);
                 if (busySlots is null || busySlots.Count == 0)
                 {
-                    continue;
+                    meetingSuggestions.Add(new MeetingResponse(user, availableSlotsFromRequest));
                 }
-                var availableSlotsFromRequest = GetAvailableMeetingsSlotsFromRequest(request);
-                var finalAvailableSlots = GetAvailableSlots(availableSlotsFromRequest, busySlots);
-                meetingSuggestions.Add(new MeetingResponse(user, finalAvailableSlots));
+                else
+                {
+                    var finalAvailableSlots = GetAvailableSlots(availableSlotsFromRequest, busySlots, request.MeetingLengthMinutes);
+                    meetingSuggestions.Add(new MeetingResponse(user, finalAvailableSlots));
+                }                
             }
 
             return meetingSuggestions;
@@ -61,7 +47,7 @@ namespace MeetingsLime.Domain.Services
             return mettingSlotsFromRequest;
         }
 
-        private IList<MeetingSlot> GetAvailableSlots(IList<MeetingSlot> availableSlots, IList<MeetingSlot> busySlots)
+        private IList<MeetingSlot> GetAvailableSlots(IList<MeetingSlot> availableSlots, IList<MeetingSlot> busySlots, int meetingMinutesLength)
         {
             var result = new List<MeetingSlot>();
             var busySlotsForGivenDay = busySlots
@@ -81,8 +67,12 @@ namespace MeetingsLime.Domain.Services
 
                     if (currentStart < busySlot.StartDateTime)
                     {
-                        // Add the free time before the busy slot starts
-                        result.Add(new MeetingSlot(currentStart, busySlot.StartDateTime));
+                        // Add the free time before the busy slot starts, if it matches the desired duration
+                        var potentialSlot = new MeetingSlot(currentStart, busySlot.StartDateTime);
+                        if ((potentialSlot.EndDateTime - potentialSlot.StartDateTime).TotalMinutes == meetingMinutesLength)
+                        {
+                            result.Add(potentialSlot);
+                        }
                     }
 
                     // Adjust the current start to the end of the busy slot
@@ -94,15 +84,18 @@ namespace MeetingsLime.Domain.Services
 
                 if (currentStart < availableSlot.EndDateTime)
                 {
-                    result.Add(new MeetingSlot(currentStart, availableSlot.EndDateTime));
+                    // Add the remaining free time, if it matches the desired duration
+                    var potentialSlot = new MeetingSlot(currentStart, availableSlot.EndDateTime);
+                    if ((potentialSlot.EndDateTime - potentialSlot.StartDateTime).TotalMinutes == meetingMinutesLength)
+                    {
+                        result.Add(potentialSlot);
+                    }
                 }
             }
 
             return result;
         }
 
-
-        //Można to zamienić na calculateStep
         private (int, int) CalculateMeetingLengthStep(int meetingLengthMinutes)
         {
             const int DefaultMeetingLengthInMinutes = 30;
@@ -116,7 +109,6 @@ namespace MeetingsLime.Domain.Services
 
             return (hours, minutes);
         }
-
 
         private IList<MeetingSlot> CalculateAvailableSlots(MeetingRequest request, int hoursStep, int minutesStep)
         {
@@ -135,9 +127,7 @@ namespace MeetingsLime.Domain.Services
                 startDateTime = request.EarliestRequested;
             }
 
-
             var days = (request.LatestRequested - startDateTime).Days;
-
             for (int i = 0; i <= days; i++)
             {
                 DateTime currentDayStart = startDateTime.AddDays(i).Date.AddHours(request.OfficeStartHour);

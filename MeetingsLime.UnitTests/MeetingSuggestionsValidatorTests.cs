@@ -14,6 +14,7 @@
             _validator = new MeetingSuggestionsValidator();
         }
 
+
         [Theory]
         [InlineData(0)] // Less than minimum
         [InlineData(181)] // Greater than maximum
@@ -87,6 +88,21 @@
             // Act & Assert
 
             Action act = () => _validator.Validate(60, earliestRequested, latestRequested, officeStartHour, officeEndHour);
+        }
+
+        [Fact]
+        public void Validate_ThrowExceptionWhenEarliestRequestedIsDifferentDayThanLatest()
+        {
+            // Arrange
+            DateTime earliestRequested = new DateTime(2024, 11, 20, 9, 0, 0); // 9:00 AM
+            DateTime latestRequested = new DateTime(2024, 11, 21, 17, 0, 0); // 5:00 PM
+            int officeStartHour = 9; // 9:00 AM
+            int officeEndHour = 17; // 5:00 PM
+
+            // Act & Assert
+
+            Assert.Throws<InvalidDataException>(() =>
+                _validator.Validate(60, earliestRequested, latestRequested, officeStartHour, officeEndHour));
         }
     }
 

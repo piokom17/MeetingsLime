@@ -1,9 +1,13 @@
 using MeetingsLime.Domain.Services;
+using MeetingsLime.Infrastructure;
+using MeetingsLime.Validators;
 
 var builder = WebApplication.CreateBuilder(args);
 
 //TODO: Verify if I did it correctly, because I want to have this MeetingData to be loaded once per application lifetime
-builder.Services.AddSingleton<IMeetingsService, MeetingsService>();
+builder.Services.AddScoped<IMeetingsService, MeetingsService>();
+builder.Services.AddScoped<IMeetingSuggestionsValidator, MeetingSuggestionsValidator>();
+builder.Services.AddScoped<IMeetingData, MeetingData>();
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -18,11 +22,17 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+else
+{
+    app.UseHttpsRedirection();
+}
 
-app.UseHttpsRedirection();
+//if (app.Environment.IsProduction())
+//{
+//    app.UseHttpsRedirection();
+//}
 
-app.UseAuthorization();
-
+//app.UseAuthorization();
 app.MapControllers();
 
 app.Run();

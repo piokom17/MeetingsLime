@@ -38,6 +38,12 @@
             {
                 throw new InvalidDataException("Latest requested hour can't be earlier than office latest hour");
             }
+
+            if (earliestRequested.Day != latestRequested.Day)
+            {
+                throw new InvalidDataException("Meetings can last only one day");
+            }
+
         }        
     }
 }
